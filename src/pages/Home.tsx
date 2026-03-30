@@ -5,6 +5,7 @@ import { motion } from 'framer-motion';
 import api from '../api/axios';
 import aboutImage from '../assets/yeshumax.png';
 import { SkillSkeleton, ProjectSkeleton } from '../components/Skeleton';
+
 interface Project {
   _id: string;
   title: string;
@@ -28,6 +29,12 @@ const Home: React.FC = () => {
   const [skillsLoading, setSkillsLoading] = useState(true);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Get API base URL from environment or use default
+  const API_BASE_URL = process.env.REACT_APP_API_URL ||  
+                       (process.env.NODE_ENV === 'production' 
+                         ? 'https://portifolio-backend-1-nmzl.onrender.com/' // Replace with your actual backend URL
+                         : 'http://localhost:5000');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -55,11 +62,16 @@ const Home: React.FC = () => {
     fetchData();
   }, []);
 
+  // Fixed getImageUrl function to use environment variable
   const getImageUrl = (imagePath: string) => {
     if (!imagePath) return 'https://via.placeholder.com/600x400';
     if (imagePath.startsWith('http')) return imagePath;
-    const normalizedPath = imagePath.startsWith('/') ? imagePath : `/${imagePath}`;
-    return `http://localhost:5000${normalizedPath}`;
+    
+    // Remove leading slash if present to avoid double slashes
+    const normalizedPath = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath;
+    
+    // Use API_BASE_URL instead of hardcoded localhost
+    return `${API_BASE_URL}/uploads/${normalizedPath}`;
   };
 
   return (
@@ -74,15 +86,24 @@ const Home: React.FC = () => {
               <img src={aboutImage} alt="About me" className="w-full h-[420px] object-cover object-top" />
             </div>
             <motion.div 
-              initial={{ opacity: 0, x: 30 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
+              initial={{ opacity: 0, x: 30 }} 
+              whileInView={{ opacity: 1, x: 0 }} 
+              viewport={{ once: true }}
               className="space-y-6"
             >
               <h2 className="text-4xl font-bold text-gray-900 dark:text-white">About Me</h2>
-              <p className="text-sm uppercase tracking-wide text-blue-600 dark:text-blue-400 font-semibold">I build modern, accessible apps with user-first design.</p>
-              <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
-                With over 5 years of experience in web development, I specialize in creating responsive, user-friendly applications using modern web technologies. I'm passionate about clean code, scalable architecture, and user-centered design.
+              <p className="text-sm uppercase tracking-wide text-blue-600 dark:text-blue-400 font-semibold">
+                I build modern, accessible apps with user-first design.
               </p>
-              <Link to="/about" className="inline-block px-6 py-3 rounded-full text-blue-600 dark:text-blue-400 font-semibold border-2 border-blue-600 dark:border-blue-400 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition-colors duration-300">
+              <p className="text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
+                With over 5 years of experience in web development, I specialize in creating responsive, 
+                user-friendly applications using modern web technologies. I'm passionate about clean code, 
+                scalable architecture, and user-centered design.
+              </p>
+              <Link 
+                to="/about" 
+                className="inline-block px-6 py-3 rounded-full text-blue-600 dark:text-blue-400 font-semibold border-2 border-blue-600 dark:border-blue-400 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition-colors duration-300"
+              >
                 Learn More About Me
               </Link>
             </motion.div>
@@ -97,6 +118,7 @@ const Home: React.FC = () => {
             <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">My Skills</h2>
             <p className="text-xl text-gray-600 dark:text-gray-400">A quick look at my technical expertise</p>
           </div>
+          
           {/* Loading State */}
           {skillsLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
@@ -111,7 +133,13 @@ const Home: React.FC = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {skills.map((skill, index) => (
-                <motion.div key={skill._id} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }}>
+                <motion.div 
+                  key={skill._id} 
+                  initial={{ opacity: 0, y: 30 }} 
+                  whileInView={{ opacity: 1, y: 0 }} 
+                  viewport={{ once: true }} 
+                  transition={{ delay: index * 0.1 }}
+                >
                   <div className="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 hover:shadow-md transition duration-300">
                     <div className="flex justify-between mb-2">
                       <span className="font-semibold text-gray-800 dark:text-gray-200">{skill.name}</span>
@@ -125,49 +153,79 @@ const Home: React.FC = () => {
               ))}
             </div>
           )}
+          
           <div className="text-center mt-12">
-            <Link to="/skills" className="inline-block px-8 py-3 rounded-full text-white bg-blue-600 hover:bg-blue-700 font-medium shadow-md transition-colors duration-300">
+            <Link 
+              to="/skills" 
+              className="inline-block px-8 py-3 rounded-full text-white bg-blue-600 hover:bg-blue-700 font-medium shadow-md transition-colors duration-300"
+            >
               See All Skills
             </Link>
           </div>
         </div>
       </section>
 
+      {/* Projects Section */}
       <section className="py-20 bg-white dark:bg-gray-800 transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl font-bold text-gray-900 dark:text-white mb-4">Featured Projects</h2>
             <p className="text-xl text-gray-600 dark:text-gray-400">Some of my recent work</p>
           </div>
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             {loading ? (
               [...Array(2)].map((_, index) => (
                 <ProjectSkeleton key={index} />
               ))
             ) : projects.length === 0 ? (
-              <div className="col-span-2 text-center py-10 text-gray-500 dark:text-gray-400">No projects to display yet.</div>
-            ) : projects.map((item, index) => (
-              <motion.div key={item._id} initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: index * 0.1 }} className="group">
-                <div className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition duration-300 border border-gray-200 dark:border-gray-700">
-                  <div className="relative h-64 overflow-hidden">
-                    <img src={getImageUrl(item.image)} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition duration-500" />
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center">
-                      <Link to="/projects" className="px-6 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-full font-bold transform -translate-y-4 group-hover:translate-y-0 transition duration-300">
-                        View Details
-                      </Link>
+              <div className="col-span-2 text-center py-10 text-gray-500 dark:text-gray-400">
+                No projects to display yet.
+              </div>
+            ) : (
+              projects.map((item, index) => (
+                <motion.div 
+                  key={item._id} 
+                  initial={{ opacity: 0, scale: 0.95 }} 
+                  whileInView={{ opacity: 1, scale: 1 }} 
+                  viewport={{ once: true }} 
+                  transition={{ delay: index * 0.1 }} 
+                  className="group"
+                >
+                  <div className="bg-white dark:bg-gray-900 rounded-2xl overflow-hidden shadow-lg hover:shadow-2xl transition duration-300 border border-gray-200 dark:border-gray-700">
+                    <div className="relative h-64 overflow-hidden">
+                      <img 
+                        src={getImageUrl(item.image)} 
+                        alt={item.title} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition duration-500" 
+                      />
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition duration-300 flex items-center justify-center">
+                        <Link 
+                          to="/projects" 
+                          className="px-6 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-full font-bold transform -translate-y-4 group-hover:translate-y-0 transition duration-300"
+                        >
+                          View Details
+                        </Link>
+                      </div>
+                    </div>
+                    <div className="p-8">
+                      <span className="text-xs font-semibold tracking-wide uppercase text-blue-600 dark:text-blue-400 mb-2 block">
+                        {item.type}
+                      </span>
+                      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{item.title}</h3>
+                      <p className="text-gray-600 dark:text-gray-400 line-clamp-2">{item.description}</p>
                     </div>
                   </div>
-                  <div className="p-8">
-                    <span className="text-xs font-semibold tracking-wide uppercase text-blue-600 dark:text-blue-400 mb-2 block">{item.type}</span>
-                    <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">{item.title}</h3>
-                    <p className="text-gray-600 dark:text-gray-400 line-clamp-2">{item.description}</p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
+                </motion.div>
+              ))
+            )}
           </div>
+          
           <div className="text-center mt-12">
-            <Link to="/projects" className="inline-block px-8 py-3 rounded-full text-blue-600 dark:text-blue-400 font-semibold border-2 border-blue-600 dark:border-blue-400 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition-colors duration-300">
+            <Link 
+              to="/projects" 
+              className="inline-block px-8 py-3 rounded-full text-blue-600 dark:text-blue-400 font-semibold border-2 border-blue-600 dark:border-blue-400 hover:bg-blue-600 hover:text-white dark:hover:bg-blue-600 dark:hover:text-white transition-colors duration-300"
+            >
               View All Projects
             </Link>
           </div>
@@ -182,7 +240,10 @@ const Home: React.FC = () => {
           <p className="text-xl text-blue-100 mb-10">
             Have a project in mind? I'd love to hear about it. Let's create something amazing together!
           </p>
-          <Link to="/contact" className="inline-block px-10 py-4 rounded-full text-blue-600 dark:text-white bg-white dark:bg-gray-800 font-bold hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-xl transition transform hover:-translate-y-1">
+          <Link 
+            to="/contact" 
+            className="inline-block px-10 py-4 rounded-full text-blue-600 dark:text-white bg-white dark:bg-gray-800 font-bold hover:bg-gray-50 dark:hover:bg-gray-700 hover:shadow-xl transition transform hover:-translate-y-1"
+          >
             Get In Touch
           </Link>
         </div>
