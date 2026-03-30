@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/static/css/main.6e53166f.css",
+    "main.js": "/static/js/main.f486ffe6.js",
+    "static/media/yeshumax.png": "/static/media/yeshumax.d3d950e68cfcb3de3ab0.png",
+    "static/media/Image.png": "/static/media/Image.b94981eda953b87dffda.png",
+    "index.html": "/index.html"
+  },
+  "entrypoints": [
+    "static/css/main.6e53166f.css",
+    "static/js/main.f486ffe6.js"
+  ]
+}
