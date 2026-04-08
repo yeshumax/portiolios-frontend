@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
+import { useNotifications } from '../context/NotificationContext';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '../api/axios';
 import { Link, useNavigate } from 'react-router-dom';
 
@@ -10,6 +11,7 @@ interface ContactFormProps {
 
 const ContactForm: React.FC<ContactFormProps> = ({ embedded = false }) => {
   const { user } = useAuth();
+  const { addNotification } = useNotifications();
   const [message, setMessage] = useState('');
   const [type, setType] = useState('feedback');
   const [name, setName] = useState('');
@@ -29,9 +31,13 @@ const ContactForm: React.FC<ContactFormProps> = ({ embedded = false }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Debug logging
+    console.log('User state:', user);
+    console.log('Form data:', { message, type, name, email });
+    
     // Validation
     if (!user && (!name.trim() || !email.trim())) {
-      setErrorMessage('Please provide your name and email address');
+      setErrorMessage('Please provide your name and email');
       setStatus('error');
       setTimeout(() => setStatus(null), 5000);
       return;
@@ -47,7 +53,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ embedded = false }) => {
     // Email validation
     const emailRegex = /^[^\s@]+@([^\s@]+\.)+[^\s@]+$/;
     if (!user && !emailRegex.test(email)) {
-      setErrorMessage('Please enter a valid email address');
+      setErrorMessage('Please enter a valid email');
       setStatus('error');
       setTimeout(() => setStatus(null), 5000);
       return;
@@ -58,7 +64,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ embedded = false }) => {
     
     try {
       const payload = user 
-        ? { message, type }
+        ? { message, type, name: user.name, email: user.email }
         : { message, type, name, email };
       
       console.log('Sending payload:', payload); // Debug log
@@ -85,11 +91,11 @@ const ContactForm: React.FC<ContactFormProps> = ({ embedded = false }) => {
           setErrorMessage('Please login to send messages');
           setTimeout(() => navigate('/login'), 2000);
         } else if (err.response.status === 400) {
-          setErrorMessage(err.response.data.message || 'Invalid form data. Please check your inputs.');
+          setErrorMessage('Invalid form data');
         } else if (err.response.status === 500) {
-          setErrorMessage('Server error. Please try again later.');
+          setErrorMessage('Server error. Please try again');
         } else {
-          setErrorMessage(err.response.data?.message || 'Failed to send message. Please try again.');
+          setErrorMessage('Failed to send message');
         }
       } else if (err.request) {
         // The request was made but no response was received
@@ -97,11 +103,12 @@ const ContactForm: React.FC<ContactFormProps> = ({ embedded = false }) => {
         setErrorMessage('Network error. Please check your internet connection and try again.');
       } else {
         // Something happened in setting up the request that triggered an Error
+        console.error('Error setting up request:', err.message);
         setErrorMessage('An unexpected error occurred. Please try again.');
       }
       
       setStatus('error');
-      setTimeout(() => setStatus(null), 6000);
+      setTimeout(() => setStatus(null), 5000);
     }
   };
 
@@ -145,49 +152,71 @@ const ContactForm: React.FC<ContactFormProps> = ({ embedded = false }) => {
           <AnimatePresence mode="wait">
             {status === 'success' && (
               <motion.div 
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 border border-green-200 dark:border-green-800/50 text-green-700 dark:text-green-400 rounded-2xl flex items-center shadow-lg"
+                initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                className="p-4 bg-gradient-to-r from-green-50 via-emerald-50 to-teal-50 dark:from-green-900/30 dark:via-emerald-900/30 dark:to-teal-900/20 border border-green-200 dark:border-green-800/50 text-green-700 dark:text-green-400 rounded-2xl flex items-center shadow-lg backdrop-blur-sm"
+                whileHover={{ scale: 1.02 }}
               >
-                <div className="flex-shrink-0 w-10 h-10 bg-green-500 rounded-full flex items-center justify-center mr-3">
+                <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center mr-3 shadow-lg">
                   <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
                   </svg>
                 </div>
-                <div>
-                  <p className="font-semibold">Message Sent Successfully!</p>
-                  <p className="text-sm">Thank you for reaching out. I'll get back to you soon.</p>
+                <div className="flex-1">
+                  <p className="font-bold text-lg">Message Sent Successfully! </p>
+                  <p className="text-sm mt-1">Thank you for reaching out. I'll get back to you soon.</p>
+                  <div className="mt-3">
+                    <button
+                      onClick={() => setStatus(null)}
+                      className="text-xs font-semibold bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-3 py-1 rounded-full hover:bg-green-200 dark:hover:bg-green-900/50 transition-colors"
+                    >
+                      Send Another Message
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             )}
             
             {status === 'error' && (
               <motion.div 
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="p-4 bg-gradient-to-r from-red-50 to-rose-50 dark:from-red-900/20 dark:to-rose-900/20 border border-red-200 dark:border-red-800/50 text-red-700 dark:text-red-400 rounded-2xl flex items-start shadow-lg"
+                initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                className="p-4 bg-gradient-to-r from-red-50 via-rose-50 to-pink-50 dark:from-red-900/30 dark:via-rose-900/30 dark:to-pink-900/30 border border-red-200 dark:border-red-800/50 text-red-700 dark:text-red-400 rounded-2xl flex items-start shadow-lg backdrop-blur-sm"
+                whileHover={{ scale: 1.02 }}
               >
-                <div className="flex-shrink-0 w-10 h-10 bg-red-500 rounded-full flex items-center justify-center mr-3 mt-0.5">
+                <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-r from-red-500 to-rose-600 rounded-full flex items-center justify-center mr-3 mt-0.5 shadow-lg">
                   <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd"></path>
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <p className="font-semibold">Failed to Send</p>
-                  <p className="text-sm">{errorMessage || 'Please try again or contact me directly at support@example.com'}</p>
-                  {errorMessage && (
+                  <p className="font-bold text-lg">Oops! Something went wrong</p>
+                  <p className="text-sm mt-1">{errorMessage || 'Please try again or contact me directly'}</p>
+                  <div className="flex gap-2 mt-3">
                     <button
                       onClick={() => {
                         setStatus(null);
                         setErrorMessage('');
                       }}
-                      className="text-xs font-semibold underline mt-2 hover:text-red-800 dark:hover:text-red-300"
+                      className="text-xs font-semibold bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 px-3 py-1 rounded-full hover:bg-red-200 dark:hover:bg-red-900/50 transition-colors"
                     >
                       Dismiss
                     </button>
-                  )}
+                    <button
+                      onClick={() => {
+                        setStatus(null);
+                        setErrorMessage('');
+                        // Focus back to first input field
+                        const firstInput = document.querySelector('input, textarea') as HTMLElement;
+                        firstInput?.focus();
+                      }}
+                      className="text-xs font-semibold bg-white dark:bg-gray-700 text-red-600 dark:text-red-400 px-3 py-1 rounded-full hover:bg-gray-50 dark:hover:bg-gray-600 transition-colors border border-red-200 dark:border-red-800"
+                    >
+                      Try Again
+                    </button>
+                  </div>
                 </div>
               </motion.div>
             )}
@@ -212,7 +241,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ embedded = false }) => {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="John Doe"
+                  placeholder="Enter your name"
                   className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 group-hover:border-gray-300 dark:group-hover:border-gray-500"
                 />
               </div>
@@ -228,7 +257,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ embedded = false }) => {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="john@example.com"
+                  placeholder="somebody@gmail.com"
                   className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700/50 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-gray-500 group-hover:border-gray-300 dark:group-hover:border-gray-500"
                 />
               </div>
@@ -279,16 +308,27 @@ const ContactForm: React.FC<ContactFormProps> = ({ embedded = false }) => {
 
           {user && (
             <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 rounded-xl border border-blue-200 dark:border-blue-800/50"
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="p-4 bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 dark:from-blue-900/30 dark:via-indigo-900/30 dark:to-purple-900/30 rounded-2xl border border-blue-200 dark:border-blue-800/50 shadow-md"
             >
-              <p className="text-sm text-gray-700 dark:text-gray-300 flex items-center gap-2">
-                <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                Sending as: <span className="font-semibold text-blue-600 dark:text-blue-400">{user.name}</span> ({user.email})
-              </p>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">Sending as:</p>
+                  <p className="text-base font-bold text-blue-600 dark:text-blue-400">{user?.name || 'User'}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{user?.email || 'user@example.com'}</p>
+                </div>
+                <div className="w-8 h-8 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                  <svg className="w-4 h-4 text-green-600 dark:text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
+                  </svg>
+                </div>
+              </div>
             </motion.div>
           )}
 

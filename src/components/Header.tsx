@@ -4,6 +4,7 @@ import { useTheme } from '../context/ThemeContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../api/axios';
 import { useEffect } from 'react';
+import NotificationDropdown from './NotificationDropdown';
 
 interface HeaderProps {
   onMenuClick?: () => void;
@@ -17,34 +18,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, pageTitle, pageSubtitle })
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
   const [newImageUrl, setNewImageUrl] = useState(user?.profileImage || '');
   const [isUpdating, setIsUpdating] = useState(false);
-  const [unreadMessages, setUnreadMessages] = useState<any[]>([]);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-
-  useEffect(() => {
-    const fetchUnread = async () => {
-      try {
-        const { data } = await api.get('/messages/unread');
-        setUnreadMessages(data);
-      } catch (error) {
-        console.error('Failed to fetch unread messages', error);
-      }
-    };
-
-    if (user) {
-      fetchUnread();
-      const interval = setInterval(fetchUnread, 30000);
-      return () => clearInterval(interval);
-    }
-  }, [user]);
-
-  const handleMarkAsRead = async (id: string) => {
-    try {
-      await api.put(`/messages/${id}/mark-as-read`);
-      setUnreadMessages(prev => prev.filter(m => m._id !== id));
-    } catch (error) {
-      console.error('Failed to mark as read', error);
-    }
-  };
 
   const handleUpdateImage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,8 +28,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, pageTitle, pageSubtitle })
       await updateProfile({ profileImage: newImageUrl });
       setIsProfileModalOpen(false);
     } catch (error) {
-      console.error('Failed to update image', error);
-      alert('Failed to update profile image. Check the URL and try again.');
+      console.error('Failed to update profile image:', error);
     } finally {
       setIsUpdating(false);
     }
@@ -116,92 +89,7 @@ const Header: React.FC<HeaderProps> = ({ onMenuClick, pageTitle, pageSubtitle })
           </button>
 
           {/* Notifications */}
-          <div className="relative">
-            <button 
-              onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
-              className={`relative p-2 rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 ${isNotificationsOpen ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400' : 'text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700'}`}
-            >
-              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-              {unreadMessages.length > 0 && (
-                <span className="absolute top-1 right-1 flex h-5 w-5 items-center justify-center bg-red-500 text-white text-[10px] font-bold rounded-full border-2 border-white dark:border-gray-800 shadow-sm animate-pulse">
-                  {unreadMessages.length > 9 ? '9+' : unreadMessages.length}
-                </span>
-              )}
-            </button>
-
-            {/* Notifications Dropdown */}
-            <AnimatePresence>
-              {isNotificationsOpen && (
-                <>
-                  <div className="fixed inset-0 z-30" onClick={() => setIsNotificationsOpen(false)}></div>
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-3 w-80 bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-100 dark:border-gray-700 z-40 overflow-hidden"
-                  >
-                    <div className="p-4 border-b border-gray-100 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/50">
-                      <h3 className="font-bold text-gray-900 dark:text-white">Notifications</h3>
-                      <span className="text-xs bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 px-2 py-0.5 rounded-full font-bold">{unreadMessages.length} New</span>
-                    </div>
-                    <div className="max-h-96 overflow-y-auto custom-scrollbar">
-                      {unreadMessages.length === 0 ? (
-                        <div className="p-10 text-center">
-                          <div className="w-12 h-12 bg-gray-100 dark:bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-3">
-                            <svg className="w-6 h-6 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-                          </div>
-                          <p className="text-sm text-gray-500 dark:text-gray-400">All caught up!</p>
-                        </div>
-                      ) : (
-                        <div className="divide-y divide-gray-100 dark:divide-gray-700">
-                          {unreadMessages.map((msg) => (
-                            <div 
-                              key={msg._id} 
-                              className="p-4 hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors cursor-pointer group relative"
-                              onClick={() => {
-                                handleMarkAsRead(msg._id);
-                                // Optionally navigate or open message detail
-                              }}
-                            >
-                              <div className="flex gap-3">
-                                <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
-                                  {msg.userId?.profileImage ? (
-                                    <img src={msg.userId.profileImage} alt="" className="w-full h-full object-cover rounded-full" />
-                                  ) : (
-                                    <span className="text-blue-600 dark:text-blue-400 font-bold">{msg.userId?.name?.charAt(0) || 'U'}</span>
-                                  )}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-bold text-gray-900 dark:text-white truncate">
-                                    {user?.role === 'admin' ? msg.userId?.name : 'Update from Admin'}
-                                  </p>
-                                  <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2 mt-0.5">
-                                    {msg.message}
-                                  </p>
-                                  <p className="text-[10px] text-gray-400 mt-1 uppercase font-semibold">
-                                    {msg.type} • {new Date(msg.createdAt).toLocaleDateString()}
-                                  </p>
-                                </div>
-                              </div>
-                              <button 
-                                onClick={(e) => { e.stopPropagation(); handleMarkAsRead(msg._id); }}
-                                className="absolute top-4 right-4 text-gray-300 hover:text-blue-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                                title="Mark as read"
-                              >
-                                <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" /></svg>
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
-          </div>
+          <NotificationDropdown />
 
           {/* User Profile */}
           <div className="flex items-center space-x-3 pl-2 border-l border-gray-200 dark:border-gray-700">

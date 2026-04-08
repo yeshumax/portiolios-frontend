@@ -19,6 +19,8 @@ interface Message {
     message: string;
     adminResponse?: string;
     createdAt: string;
+    name?: string; // Guest user name
+    email?: string; // Guest user email
 }
 
 interface Project {
@@ -76,17 +78,45 @@ const MessageItem: React.FC<{
 
     return (
         <div className="border border-gray-100 dark:border-gray-800 rounded-2xl p-5 hover:shadow-lg transition-all duration-300 bg-white dark:bg-[#1a1a1a]">
-            <div className="flex justify-between items-start mb-3">
-                <div>
-                    <h3 className="font-bold text-gray-900 dark:text-white flex items-center gap-2">
-                        {msg.userId?.name || 'Unknown User'}
-                        <span className="text-xs font-normal text-gray-500 dark:text-gray-400">({msg.userId?.email || 'N/A'})</span>
-                    </h3>
-                    <span className="text-[10px] font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mt-1 block">{msg.type}</span>
+            <div className="flex justify-between items-start mb-4">
+                <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center flex-shrink-0">
+                            <span className="text-sm font-bold text-gray-600 dark:text-gray-300 uppercase">
+                                {msg.userId?.name?.charAt(0) || 'U'}
+                            </span>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-gray-900 dark:text-white text-lg">
+                                {msg.userId?.name || 'Guest User'}
+                            </h3>
+                            <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 4.26a42 42 0 01.4.42V19a42 42 0 01-.42.42H5.5a2 2 0 00-2 2v10a2 2 0 002 2h11a2 2 0 002-2V7a2 2 0 00-2-2H5.5a2 2 0 00-2 2z" />
+                                </svg>
+                                <span>{msg.userId?.email || 'No email provided'}</span>
+                                {msg.userId?.name && (
+                                    <span className="ml-2 px-2 py-1 bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-400 text-xs rounded-full">
+                                        Registered User
+                                    </span>
+                                )}
+                                {!msg.userId && (
+                                    <span className="ml-2 px-2 py-1 bg-orange-100 dark:bg-orange-900/40 text-orange-800 dark:text-orange-400 text-xs rounded-full">
+                                        Guest User
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <span className={`px-3 py-1.5 text-[11px] font-bold uppercase rounded-full tracking-wider ${getStatusColor(msg.status)}`}>
+                            {msg.status}
+                        </span>
+                        <span className="text-xs text-gray-500 dark:text-gray-400 ml-2">
+                            {new Date(msg.createdAt).toLocaleDateString()}
+                        </span>
+                    </div>
                 </div>
-                <span className={`px-2.5 py-1 text-[10px] font-bold uppercase rounded-full tracking-wider ${getStatusColor(msg.status)}`}>
-                    {msg.status}
-                </span>
             </div>
 
             <p className="text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-[#121212] p-4 rounded-xl text-sm leading-relaxed border border-gray-100 dark:border-gray-800/50">

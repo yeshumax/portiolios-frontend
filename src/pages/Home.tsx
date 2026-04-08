@@ -70,7 +70,7 @@ const Home: React.FC = () => {
     // Remove leading slash if present to avoid double slashes
     const normalizedPath = imagePath.startsWith('/') ? imagePath.slice(1) : imagePath;
     
-    // Use API_BASE_URL instead of hardcoded localhost
+    // Use the same API base URL as the axios instance
     return `${API_BASE_URL}/uploads/${normalizedPath}`;
   };
 

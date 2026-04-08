@@ -15,6 +15,7 @@ import BrowseProjects from "./pages/BrowseProjects";
 import { ProtectedRoute, AdminRoute } from "./components/ProtectedRoute";
 import { ThemeProvider } from "./context/ThemeContext";
 import { AuthProvider } from "./context/AuthContext";
+import NotificationProvider from "./context/NotificationContext";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ToastProvider } from "./components/Toast";
 import "./index.css";
@@ -41,8 +42,9 @@ const App: React.FC = () => {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <ThemeProvider>
-          <ToastProvider>
+        <NotificationProvider>
+          <ThemeProvider>
+            <ToastProvider>
             <Router>
               <Layout>
                 <Routes>
@@ -83,8 +85,9 @@ const App: React.FC = () => {
               </Routes>
             </Layout>
           </Router>
-        </ToastProvider>
-      </ThemeProvider>
+            </ToastProvider>
+          </ThemeProvider>
+        </NotificationProvider>
       </AuthProvider>
     </ErrorBoundary>
   );

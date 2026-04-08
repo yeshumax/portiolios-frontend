@@ -76,10 +76,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setError(null);
       const { data } = await api.post('/auth/register', userData);
-      if (data.isActive === false) {
-        throw new Error(data.message);
+      
+      // Handle successful registration that requires approval/verification
+      if (!data.success && data.requiresApproval) {
+        // Don't treat this as an error - it's expected behavior
+        return data;
       }
-      setUser(data);
+      
+      // Only set user if registration is complete and user is active
+      if (data.success && data.isActive) {
+        setUser(data);
+      }
+      
       return data;
     } catch (err: any) {
       setError(err.response?.data?.message || err.message || 'Registration failed');

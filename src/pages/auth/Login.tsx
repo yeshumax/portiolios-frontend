@@ -26,15 +26,13 @@ const Login: React.FC = () => {
   // Validation functions
   const validateEmail = (value: string): string => {
     if (!value) return 'Email is required';
-    if (!/\S+@\S+\.\S+/.test(value)) return 'Please enter a valid email address';
-    if (value.length > 100) return 'Email must be less than 100 characters';
+    if (!/\S+@\S+\.\S+/.test(value)) return 'Please enter a valid email';
     return '';
   };
 
   const validatePassword = (value: string): string => {
     if (!value) return 'Password is required';
     if (value.length < 8) return 'Password must be at least 8 characters';
-    if (value.length > 100) return 'Password must be less than 100 characters';
     return '';
   };
 
@@ -82,13 +80,13 @@ const Login: React.FC = () => {
     setTouched({ email: true, password: true });
     
     if (!validateForm()) {
-      showToast('Please fix the errors before submitting', 'error');
+      showToast('Please fix all errors', 'error');
       return;
     }
 
     try {
       const userData = await login({ email: email.trim(), password });
-      showToast('Login successful! Welcome back!', 'success');
+      showToast('Login successful!', 'success');
       setTimeout(() => {
         if (userData.role === 'admin') {
           navigate('/admin');
@@ -97,7 +95,7 @@ const Login: React.FC = () => {
         }
       }, 1000);
     } catch (err) {
-      showToast(error || 'Invalid email or password. Please try again.', 'error');
+      showToast('Invalid email or password', 'error');
     }
   };
 
@@ -147,7 +145,7 @@ const Login: React.FC = () => {
                       ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
                       : 'border-gray-300 dark:border-gray-600 focus:border-blue-500'
                   }`}
-                  placeholder="john@example.com"
+                  placeholder="somebody@gmail.com"
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
                   {email && !errors.email && touched.email && (
@@ -226,41 +224,43 @@ const Login: React.FC = () => {
             <motion.button
               type="submit"
               disabled={loading}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className={`w-full flex justify-center items-center py-3 px-4 border border-transparent rounded-xl shadow-lg text-sm font-bold text-white transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+              whileHover={{ scale: loading ? 1 : 1.02 }}
+              whileTap={{ scale: loading ? 1 : 0.98 }}
+              className={`w-full py-4 px-6 rounded-xl font-bold text-white shadow-xl transition-all duration-200 flex items-center justify-center gap-3 relative overflow-hidden group ${
                 loading
                   ? 'bg-gradient-to-r from-blue-400 to-indigo-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl'
+                  : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg shadow-blue-500/25'
               }`}
             >
               {loading ? (
                 <>
-                  <LoadingSpinner size="sm" className="mr-2" />
-                  Signing in...
+                  <div className="relative">
+                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  </div>
+                  <span className="font-medium">Signing in...</span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 animate-pulse"></div>
                 </>
               ) : (
                 <>
-                  <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                   </svg>
-                  Sign in
+                  <span>Sign In</span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -skew-x-12 translate-x-full group-hover:translate-x-full transition-transform duration-700"></div>
                 </>
               )}
             </motion.button>
           </form>
 
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Don't have an account?{' '}
-              <Link
-                to="/register"
-                className="font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-500 hover:underline transition"
-              >
-                Create one now
-              </Link>
-            </p>
-          </div>
+          <p className="text-center text-sm text-gray-600 dark:text-gray-400 mt-6">
+            Don't have an account?{' '}
+            <Link
+              to="/register"
+              className="font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-500 hover:underline transition"
+            >
+              Create one now
+            </Link>
+          </p>
         </div>
       </motion.div>
     </div>

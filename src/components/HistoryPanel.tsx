@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import api from '../api/axios';
+import { useAuth } from '../context/AuthContext';
 
 interface Message {
   _id: string;
@@ -19,6 +20,7 @@ interface HistoryPanelProps {
 }
 
 const HistoryPanel: React.FC<HistoryPanelProps> = ({ messages, loading, onNewMessage, title = "My Complaints & Feedback" }) => {
+  const { user } = useAuth();
   const [showForm, setShowForm] = useState(false);
   const [message, setMessage] = useState('');
   const [type, setType] = useState('complaint');
@@ -26,14 +28,22 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ messages, loading, onNewMes
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user?._id) return; // Safety check
+    
     setSubmitting(true);
     try {
-      await api.post('/messages', { message, type });
+      // Include user name and email when submitting message
+      await api.post('/messages', { 
+        message, 
+        type,
+        name: user.name,
+        email: user.email
+      });
       setMessage('');
       setShowForm(false);
       onNewMessage();
     } catch (error) {
-      console.error('Failed to submit message');
+      console.error('Failed to submit message:', error);
     } finally {
       setSubmitting(false);
     }
@@ -42,21 +52,27 @@ const HistoryPanel: React.FC<HistoryPanelProps> = ({ messages, loading, onNewMes
   // Mark all unread notifications as read when viewed
   React.useEffect(() => {
     const markAllRead = async () => {
+      if (!user?._id) return; // Safety check
+      
       const unread = messages.filter(m => m.adminResponse && m.isReadByUser === false);
       for (const msg of unread) {
         try {
           await api.put(`/messages/${msg._id}/mark-as-read`);
-        } catch (error) {
+        } catch (error: any) {
           console.error('Failed to mark as read', error);
+          if (error.response?.status === 401) {
+            // Stop trying if unauthorized
+            break;
+          }
         }
       }
       if (unread.length > 0) onNewMessage(); // Refresh count in header
     };
 
-    if (messages.length > 0) {
+    if (messages.length > 0 && user?._id) {
       markAllRead();
     }
-  }, [messages, onNewMessage]);
+  }, [messages, onNewMessage, user]);
 
   const getStatusStyle = (status: string) => {
     switch (status) {
