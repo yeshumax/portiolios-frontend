@@ -228,25 +228,61 @@ const AdminDashboard: React.FC = () => {
                 setSkills(sRes.data);
                 setMessages(mRes.data);
             } else if (activeTab === 'messages') {
-                const { data } = await api.get('/messages');
-                setMessages(data);
+                try {
+                    const { data } = await api.get('/messages');
+                    setMessages(data);
+                } catch (err: any) {
+                    console.error('Error fetching messages:', err);
+                    if (err.response?.status === 401) {
+                        showToast('Please login as admin to view messages', 'error');
+                    } else if (err.response?.status === 403) {
+                        showToast('Admin access required to view messages', 'error');
+                    } else {
+                        showToast('Failed to load messages', 'error');
+                    }
+                    setMessages([]);
+                }
             } else if (activeTab === 'projects') {
-                const { data } = await api.get('/projects');
-                setProjects(data);
+                try {
+                    const { data } = await api.get('/projects');
+                    setProjects(data);
+                } catch (err: any) {
+                    console.error('Error fetching projects:', err);
+                    showToast('Failed to load projects', 'error');
+                    setProjects([]);
+                }
             } else if (activeTab === 'users') {
-                const { data } = await api.get('/users');
-                setUsers(data);
+                try {
+                    const { data } = await api.get('/users');
+                    setUsers(data);
+                } catch (err: any) {
+                    console.error('Error fetching users:', err);
+                    if (err.response?.status === 401) {
+                        showToast('Please login as admin to view users', 'error');
+                    } else if (err.response?.status === 403) {
+                        showToast('Admin access required to view users', 'error');
+                    } else {
+                        showToast('Failed to load users', 'error');
+                    }
+                    setUsers([]);
+                }
             } else if (activeTab === 'skills') {
-                const { data } = await api.get('/skills');
-                setSkills(data);
+                try {
+                    const { data } = await api.get('/skills');
+                    setSkills(data);
+                } catch (err: any) {
+                    console.error('Error fetching skills:', err);
+                    showToast('Failed to load skills', 'error');
+                    setSkills([]);
+                }
             }
         } catch (error) {
             console.error('Error fetching admin data', error);
+            showToast('Failed to load dashboard data', 'error');
         } finally {
             setLoading(false);
         }
-    }, [activeTab]);
-
+    }, [activeTab, showToast]);
     const stats = [
         { label: 'Total Users', value: users.length, icon: '👥', color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/30', tab: 'users' },
         { label: 'Projects', value: projects.length, icon: '📁', color: 'text-purple-600', bg: 'bg-purple-50 dark:bg-purple-900/30', tab: 'projects' },
@@ -266,7 +302,7 @@ const AdminDashboard: React.FC = () => {
         } else {
             setLoading(false);
         }
-    }, [fetchData, activeTab]);
+    }, [activeTab]);
 
     const handleEditUser = (user: User) => {
         setNewUser({ name: user.name, email: user.email, password: '', role: user.role });

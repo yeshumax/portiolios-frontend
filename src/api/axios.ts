@@ -1,7 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 
 const api: AxiosInstance = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'https://portiolios-frontend.vercel.app/api',
+  baseURL: process.env.REACT_APP_FRONTEND_URL || process.env.REACT_APP_API_URL,
   withCredentials: true,
   timeout: 10000,
 });
@@ -9,7 +9,10 @@ const api: AxiosInstance = axios.create({
 // Add request interceptor for debugging
 api.interceptors.request.use(
   (config) => {
-    console.log('API Request:', config.method?.toUpperCase(), config.url, config.data);
+    // Only log in development to avoid console spam
+    if (process.env.NODE_ENV === 'development') {
+      console.log('API Request:', config.method?.toUpperCase(), config.url, config.data);
+    }
     return config;
   },
   (error) => {
@@ -21,15 +24,30 @@ api.interceptors.request.use(
 // Add response interceptor for debugging and error handling
 api.interceptors.response.use(
   (response) => {
-    console.log('API Response:', response.config.method?.toUpperCase(), response.config.url, response.status, response.data);
+    // Only log in development to avoid console spam
+    if (process.env.NODE_ENV === 'development') {
+      console.log('API Response:', response.config.method?.toUpperCase(), response.config.url, response.status, response.data);
+    }
     return response;
   },
   (error) => {
-    console.error('API Response Error:', error.response?.status, error.response?.data || error.message);
-    // Only redirect to login on 401 for protected routes, not for public data fetching
-    if (error.response?.status === 401 && error.config?.url?.includes('/auth/')) {
+    // Only log in development to avoid console spam
+    if (process.env.NODE_ENV === 'development') {
+      console.error('API Response Error:', error.response?.status, error.response?.data || error.message);
+    }
+    
+    // Prevent infinite loops - only redirect on 401 for auth endpoints and not already on login page
+    if (
+      error.response?.status === 401 && 
+      !window.location.pathname.includes('/login') &&
+      (error.config?.url?.includes('/auth/') || error.config?.url?.includes('/profile/') || error.config?.url?.includes('/user/'))
+    ) {
+      // Clear any stored user data
+      localStorage.removeItem('user');
+      // Redirect to login
       window.location.href = '/login';
     }
+    
     return Promise.reject(error);
   }
 );

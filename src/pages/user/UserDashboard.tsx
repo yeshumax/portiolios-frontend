@@ -43,25 +43,37 @@ const UserDashboard: React.FC = () => {
     const [passwordLoading, setPasswordLoading] = useState(false);
 
     const stats = [
-        { label: 'My Complaints', value: messages.length, icon: '🕒', color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/30' },
-        { label: 'Resolved', value: messages.filter(m => m.status === 'resolved').length, icon: '✅', color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/40' },
-        { label: 'Pending', value: messages.filter(m => m.status === 'pending').length, icon: '⏳', color: 'text-yellow-600', bg: 'bg-yellow-50 dark:bg-yellow-900/30' },
+        { label: 'My Complaints', value: messages.length, icon: '', color: 'text-blue-600', bg: 'bg-blue-50 dark:bg-blue-900/30' },
+        { label: 'Resolved', value: messages.filter(m => m.status === 'resolved').length, icon: '', color: 'text-green-600', bg: 'bg-green-50 dark:bg-green-900/40' },
+        { label: 'Pending', value: messages.filter(m => m.status === 'pending').length, icon: '', color: 'text-yellow-600', bg: 'bg-yellow-50 dark:bg-yellow-900/30' },
     ];
 
     useEffect(() => {
         const fetchMyMessages = async () => {
+            if (!user) {
+                setMessages([]);
+                setLoading(false);
+                return;
+            }
+            
             try {
                 const { data } = await api.get('/messages/my-messages');
                 setMessages(data);
-            } catch (error) {
-                console.error('Failed to fetch messages');
-                showToast('Failed to fetch messages', 'error');
+            } catch (error: any) {
+                console.error('Failed to fetch user messages:', error);
+                if (error.response?.status === 401) {
+                    showToast('Please login to view your messages', 'error');
+                } else {
+                    showToast('Failed to load messages', 'error');
+                }
+                setMessages([]);
             } finally {
                 setLoading(false);
             }
         };
+
         fetchMyMessages();
-    }, [showToast]);
+    }, [user]);
 
     const handleTabChange = (tab: string) => {
         if (tab === 'submit') {
@@ -71,7 +83,6 @@ const UserDashboard: React.FC = () => {
         }
     };
 
-    // Settings handlers
     const handleProfileUpdate = async (e: React.FormEvent) => {
         e.preventDefault();
         setProfileLoading(true);
@@ -113,9 +124,8 @@ const UserDashboard: React.FC = () => {
         }
     };
 
-    // Fixed theme handler - always passes an argument
     const handleThemeChange = (newTheme: 'light' | 'dark') => {
-        setTheme(newTheme); // This now always receives an argument
+        setTheme(newTheme);
     };
 
     return (

@@ -46,9 +46,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const { data } = await api.get('/profile');
       setUser(data.user);
-    } catch (err) {
-      console.log('AuthContext: Profile fetch failed (user not logged in)', err);
-      setUser(null);
+    } catch (err: any) {
+      console.log('AuthContext: Profile fetch failed (user not logged in or token expired)', err);
+      // Clear invalid token and user data
+      if (err.response?.status === 401) {
+        // Clear the invalid JWT cookie
+        document.cookie = 'jwt=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        // Clear user state
+        setUser(null);
+      }
     } finally {
       setLoading(false);
     }
